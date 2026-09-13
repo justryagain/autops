@@ -1,0 +1,4 @@
+@AutoOps_Api_HostAddress = http://localhost:5200
+
+POST {{AutoOps_Api_HostAddress}}/api/heartbeat?target=https://example.com
+Accept: application/json

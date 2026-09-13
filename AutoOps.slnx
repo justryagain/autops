@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AutoOps.Api/AutoOps.Api.csproj" />
+  <Project Path="AutoOps.Contracts/AutoOps.Contracts.csproj" />
+</Solution>
