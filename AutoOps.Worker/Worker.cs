@@ -1,10 +1,14 @@
-using Azure.Messaging.ServiceBus;
 using AutoOps.Contracts.Events;
+using Azure;
+using Azure.Messaging.ServiceBus;
 using System.Text.Json;
 
 namespace AutoOps.Worker
 {
-    public class Worker(ILogger<Worker> logger, ServiceBusClient serviceBusClient) : BackgroundService
+    public class Worker(
+        ILogger<Worker> logger,
+        ServiceBusClient serviceBusClient,
+        HttpClient httpClient) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -16,7 +20,7 @@ namespace AutoOps.Worker
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
-        private Task ProcessMessageAsync(ProcessMessageEventArgs args)
+        private async Task ProcessMessageAsync(ProcessMessageEventArgs args)
         {
             string body = args.Message.Body.ToString();
             HeartbeatRequested? heartbeatRequested = JsonSerializer.Deserialize<HeartbeatRequested>(body);
@@ -24,16 +28,25 @@ namespace AutoOps.Worker
             if (heartbeatRequested is null)
             {
                 logger.LogWarning("Could not deserialize message: {Body}", body);
-                return Task.CompletedTask;
+                return;
             }
 
-            logger.LogInformation(
-                "Heartbeat request received. EventId: {EventId}, Target: {Target}, RequestedAtUtc: {RequestedAtUtc}",
-                heartbeatRequested.EventId,
-                heartbeatRequested.Target,
-                heartbeatRequested.RequestedAtUtc);
-
-            return Task.CompletedTask;
+            try
+            {
+                HttpResponseMessage response = await httpClient.GetAsync(heartbeatRequested.Target);
+                logger.LogInformation(
+                    "Heartbeat completed. Target: {Target}, StatusCode: {StatusCode}, IsSuccess: {IsSuccess}",
+                    heartbeatRequested.Target,
+                    (int)response.StatusCode,
+                    response.IsSuccessStatusCode);
+            }
+            catch (HttpRequestException ex)
+            {
+                logger.LogError(
+                    "Heartbeat failed. Target: {Target}, Error: {Error}",
+                    heartbeatRequested.Target,
+                    ex.Message);
+            }
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs args)
