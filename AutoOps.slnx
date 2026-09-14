@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="AutoOps.Api/AutoOps.Api.csproj" />
   <Project Path="AutoOps.Contracts/AutoOps.Contracts.csproj" />
+  <Project Path="AutoOps.Worker/AutoOps.Worker.csproj" Id="67c96b29-ce90-4ffb-830c-d765cff939fe" />
 </Solution>
